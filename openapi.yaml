@@ -1,0 +1,365 @@
+openapi: "3.1.0"
+info:
+  title: SkillLedger API
+  description: On-chain verifiable capability marketplace for autonomous agents
+  version: "0.1.0"
+servers:
+  - url: http://localhost:5000
+    description: Development server
+
+paths:
+  /health:
+    get:
+      operationId: healthCheck
+      summary: Service health check
+      responses:
+        "200":
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+
+  /accounts:
+    post:
+      operationId: createAccount
+      summary: Register a new agent account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [address]
+              properties:
+                address:
+                  type: string
+                  description: Blockchain address of the agent
+      responses:
+        "201":
+          description: Account created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Account"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+
+  /accounts/{accountId}/balance:
+    get:
+      operationId: getAccountBalance
+      summary: Get account balance
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Account details including balance
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Account"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /skills:
+    post:
+      operationId: createSkill
+      summary: Register a new skill
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - description
+                - endpoint
+                - owner_account_id
+                - price_per_call
+              properties:
+                name:
+                  type: string
+                description:
+                  type: string
+                endpoint:
+                  type: string
+                  format: uri
+                owner_account_id:
+                  type: string
+                price_per_call:
+                  type: integer
+                  minimum: 0
+      responses:
+        "201":
+          description: Skill created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Skill"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+    get:
+      operationId: listSkills
+      summary: List available skills
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [active, inactive]
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: Paginated list of skills
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaginatedResponse"
+
+  /skills/{skillId}:
+    get:
+      operationId: getSkill
+      summary: Get skill details
+      parameters:
+        - name: skillId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Skill details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Skill"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /skills/{skillId}/execute:
+    post:
+      operationId: executeSkill
+      summary: Execute a skill
+      parameters:
+        - name: skillId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [requester_account_id]
+              properties:
+                requester_account_id:
+                  type: string
+                input_params:
+                  type: object
+      responses:
+        "201":
+          description: Execution created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Execution"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+
+  /executions:
+    get:
+      operationId: listExecutions
+      summary: List executions
+      parameters:
+        - name: skill_id
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, running, completed, failed]
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: Paginated list of executions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaginatedResponse"
+
+  /executions/{executionId}:
+    get:
+      operationId: getExecution
+      summary: Get execution details
+      parameters:
+        - name: executionId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Execution details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Execution"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /executions/{executionId}/verify:
+    post:
+      operationId: verifyExecution
+      summary: Verify and settle an execution
+      parameters:
+        - name: executionId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Execution verified and settled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Execution"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+
+components:
+  schemas:
+    Account:
+      type: object
+      properties:
+        id:
+          type: string
+        address:
+          type: string
+        balance:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+
+    Skill:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        endpoint:
+          type: string
+          format: uri
+        owner_account_id:
+          type: string
+        price_per_call:
+          type: integer
+        status:
+          type: string
+          enum: [active, inactive]
+        created_at:
+          type: string
+          format: date-time
+
+    Execution:
+      type: object
+      properties:
+        id:
+          type: string
+        skill_id:
+          type: string
+        requester_account_id:
+          type: string
+        input_params:
+          type: object
+        status:
+          type: string
+          enum: [pending, running, completed, failed]
+        result:
+          type: object
+          nullable: true
+        cost:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+        verified_at:
+          type: string
+          format: date-time
+          nullable: true
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+        detail:
+          type: object
+          nullable: true
+
+    PaginatedResponse:
+      type: object
+      properties:
+        items:
+          type: array
+        total:
+          type: integer
+        page:
+          type: integer
+        per_page:
+          type: integer
+
+  responses:
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    ValidationError:
+      description: Validation error
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
