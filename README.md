@@ -1,35 +1,72 @@
 # SkillLedger
 
-On-chain verifiable capability marketplace for autonomous agents.
+A Rails API application for skill execution, verification, and account management.
+
+## Stack
+
+- **Rails 8.1 API mode** (no views, no sessions)
+- **SQLite** (development/test), **PostgreSQL** (production)
+- **RSpec** + **FactoryBot** for testing
+- **SimpleCov** for code coverage
+- **rswag** for OpenAPI/Swagger docs
+- **RuboCop** for linting
 
 ## Architecture
 
-Multi-layered Python application:
+| Layer | Location |
+|-------|----------|
+| Controllers | `app/controllers/api/v1/` (thin, no business logic) |
+| Services | `app/services/` (all business rules) |
+| Models | `app/models/` (Active Record) |
+| OpenAPI | `swagger/v1/swagger.yaml` (auto-generated) |
 
-| Layer | Responsibility |
-|-------|---------------|
-| controllers/ | HTTP entry points — parse input, delegate to services |
-| services/ | Business logic, orchestration |
-| repositories/ | Data access (DB, cache, blockchain) |
-| models/ | Domain schemas and types |
-| middleware/ | Auth, error handling, logging |
-| config/ | Configuration loading (env, files) |
+## API Endpoints
 
-## Quick Start
+### Skills
+- `POST /api/v1/skills` - Create a skill
+- `GET /api/v1/skills` - List skills
+- `GET /api/v1/skills/:id` - Get skill details
+- `POST /api/v1/skills/:id/execute` - Execute a skill
+
+### Executions
+- `GET /api/v1/executions` - List executions
+- `GET /api/v1/executions/:id` - Get execution details
+- `POST /api/v1/executions/:id/verify` - Verify an execution
+
+### Accounts
+- `POST /api/v1/accounts` - Create an account
+- `GET /api/v1/accounts/:id/balance` - Get account balance
+
+### Health
+- `GET /api/v1/health` - Health check
+
+## Setup
 
 ```bash
-pip install -r requirements.txt
-python -m skillledger.app
+bundle install
+rails db:create db:migrate
+rails server
 ```
 
 ## Testing
 
 ```bash
-pytest --cov=skillledger --cov-report=term-missing
+bundle exec rspec        # Run all tests
+bundle exec rubocop      # Lint check
+bundle exec brakeman     # Security audit
 ```
 
-## Documentation
+## OpenAPI Docs
 
-API docs available at `/docs` when running.
-OpenAPI spec at `openapi.yaml`.
+After running the swaggerize task, docs are available at `/api-docs` when the server is running.
 
+```bash
+bundle exec rails rswag:specs:swaggerize
+```
+
+## CI
+
+GitHub Actions CI runs on push/PR to `main`:
+- RSpec tests
+- RuboCop linting
+- Brakeman security scan

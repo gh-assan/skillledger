@@ -1,0 +1,326 @@
+---
+openapi: 3.0.3
+info:
+  title: SkillLedger API
+  version: v1
+  description: Skill execution and verification API
+paths:
+  "/api/v1/accounts":
+    post:
+      summary: create account
+      tags:
+      - Accounts
+      parameters: []
+      responses:
+        '201':
+          description: created
+        '422':
+          description: unprocessable entity
+      requestBody:
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/AccountInput"
+  "/api/v1/accounts/{id}/balance":
+    get:
+      summary: get account balance
+      tags:
+      - Accounts
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: successful
+        '404':
+          description: not found
+  "/api/v1/executions":
+    get:
+      summary: list executions
+      tags:
+      - Executions
+      parameters:
+      - name: skill_id
+        in: query
+        required: false
+        schema:
+          type: integer
+      - name: status
+        in: query
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: successful
+  "/api/v1/executions/{id}":
+    get:
+      summary: show execution
+      tags:
+      - Executions
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: successful
+        '404':
+          description: not found
+  "/api/v1/executions/{id}/verify":
+    post:
+      summary: verify execution
+      tags:
+      - Executions
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: successful
+        '422':
+          description: unprocessable entity
+        '404':
+          description: not found
+  "/api/v1/health":
+    get:
+      summary: show health
+      tags:
+      - Health
+      responses:
+        '200':
+          description: successful
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Health"
+  "/api/v1/skills":
+    get:
+      summary: list skills
+      tags:
+      - Skills
+      parameters:
+      - name: name
+        in: query
+        required: false
+        description: Filter by skill name
+        schema:
+          type: string
+      responses:
+        '200':
+          description: successful
+    post:
+      summary: create skill
+      tags:
+      - Skills
+      parameters: []
+      responses:
+        '201':
+          description: created
+        '422':
+          description: unprocessable entity
+      requestBody:
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/SkillInput"
+  "/api/v1/skills/{id}":
+    get:
+      summary: show skill
+      tags:
+      - Skills
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: successful
+        '404':
+          description: not found
+  "/api/v1/skills/{id}/execute":
+    post:
+      summary: execute skill
+      tags:
+      - Skills
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: successful
+        '404':
+          description: not found
+      requestBody:
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/ExecuteInput"
+servers:
+- url: http://localhost:3000
+  description: Development server
+components:
+  schemas:
+    Skill:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        prompt:
+          type: string
+          nullable: true
+        input_schema:
+          type: object
+        output_schema:
+          type: object
+        version:
+          type: integer
+        metadata:
+          type: object
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      required:
+      - id
+      - name
+      - version
+    Execution:
+      type: object
+      properties:
+        id:
+          type: integer
+        skill_id:
+          type: integer
+        input:
+          type: object
+        output:
+          type: object
+          nullable: true
+        status:
+          type: string
+          enum:
+          - pending
+          - running
+          - completed
+          - failed
+          - verified
+        error_message:
+          type: string
+          nullable: true
+        executed_at:
+          type: string
+          format: date-time
+          nullable: true
+        verified_at:
+          type: string
+          format: date-time
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        skill:
+          "$ref": "#/components/schemas/Skill"
+      required:
+      - id
+      - skill_id
+      - status
+    Account:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        balance:
+          type: number
+          format: decimal
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      required:
+      - id
+      - name
+      - balance
+    Health:
+      type: object
+      properties:
+        status:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        database:
+          type: boolean
+        version:
+          type: string
+    SkillInput:
+      type: object
+      properties:
+        skill:
+          type: object
+          properties:
+            name:
+              type: string
+            description:
+              type: string
+            prompt:
+              type: string
+            input_schema:
+              type: object
+            output_schema:
+              type: object
+            version:
+              type: integer
+            metadata:
+              type: object
+          required:
+          - name
+    ExecuteInput:
+      type: object
+      properties:
+        input:
+          type: object
+    AccountInput:
+      type: object
+      properties:
+        account:
+          type: object
+          properties:
+            name:
+              type: string
+            balance:
+              type: number
+          required:
+          - name
+    Error:
+      type: object
+      properties:
+        error:
+          type: string

@@ -1,6 +1,44 @@
-.venv/
-__pycache__/
-*.pyc
+# Rails
+*.rbc
+capybara-*.html
+.sprockets
+public/system/
 .env
+.env.*
+.env.local
+.env.production.local
+.env.development.local
+.env.test.local
+
+# Editor
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+log/
+*.log
+tmp/
+
+# Storage
+storage/
+
+# Coverage
+coverage/
 .coverage
-htmlcov/
+
+# Credentials
+config/master.key
+config/credentials/*.key
+
+# Ruby
+*.gem
+.bundle
+vendor/bundle
+vendor/cache
